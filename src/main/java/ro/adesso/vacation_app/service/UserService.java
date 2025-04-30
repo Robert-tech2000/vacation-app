@@ -1,8 +1,11 @@
 package ro.adesso.vacation_app.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Service;
 import ro.adesso.vacation_app.dto.UserDTO;
+import ro.adesso.vacation_app.dto.mapper.UserMapper;
 import ro.adesso.vacation_app.model.User;
 import ro.adesso.vacation_app.repository.UserRepository;
 
@@ -12,9 +15,12 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository repository;
+    private final UserMapper userMapper;
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
-    public UserService(UserRepository repository) {
+    public UserService(UserRepository repository, UserMapper userMapper) {
         this.repository = repository;
+        this.userMapper = userMapper;
     }
 
     public UserDTO createUser(UserDTO user) {
@@ -24,34 +30,27 @@ public class UserService {
         newUser.setFirstName(user.getFirstName());
         newUser.setLastName(user.getLastName());
         newUser.setArchived(false);
-        repository.save(newUser);
 
-        return convertUserToDTO(newUser);
+        repository.save(newUser);
+        logger.info("User created successfully with ID: {}", newUser.getId());
+
+        return userMapper.toDTO(newUser);
     }
 
     public void archiveUser(Long userId) {
+        logger.info("Archived user with ID: {}", userId);
         repository.findById(userId).ifPresent(user -> user.setArchived(true));
     }
 
     public UserDTO getUser(Long userId) {
-        User client = repository.findById(userId).orElseThrow();
-        return convertUserToDTO(client);
+        User user = repository.findById(userId).orElseThrow();
+        logger.info("User found with ID: {}", user.getId());
+        return userMapper.toDTO(user);
     }
 
     public List<UserDTO> getAllUsers() {
-        return Streamable.of(repository.findAll()).toList().stream().map(this::convertUserToDTO).toList();
-    }
-
-    private UserDTO convertUserToDTO(User newUser) {
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId(newUser.getId());
-        userDTO.setUsername(newUser.getUsername());
-        userDTO.setEmail(newUser.getEmail());
-        userDTO.setFirstName(newUser.getFirstName());
-        userDTO.setLastName(newUser.getLastName());
-        userDTO.setArchived(newUser.isArchived());
-
-        return userDTO;
+        logger.info("Getting all users");
+        return Streamable.of(repository.findAll()).toList().stream().map(userMapper::toDTO).toList();
     }
 
 }

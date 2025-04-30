@@ -6,9 +6,9 @@ import lombok.Setter;
 
 import java.util.Date;
 
-@MappedSuperclass
 @Getter
 @Setter
+@MappedSuperclass
 public abstract class AbstractEntity {
     /**
      * The unique identifier for the entity.

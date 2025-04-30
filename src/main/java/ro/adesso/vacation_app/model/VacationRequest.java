@@ -1,5 +1,6 @@
 package ro.adesso.vacation_app.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -29,5 +30,6 @@ public class VacationRequest extends AbstractEntity {
     private boolean withPay;
 
     @ManyToOne
+    @JsonIgnore
     private User user;
 }

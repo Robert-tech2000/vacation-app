@@ -51,5 +51,11 @@ public class VacationRequestController {
         return ResponseEntity.noContent().build();
     }
 
+    @Transactional
+    @DeleteMapping("/{vacationId}")
+    public ResponseEntity<Void> deleteClient(@PathVariable("vacationId") Long vacationId) {
+        service.deleteVacationById(vacationId);
+        return ResponseEntity.noContent().build();
+    }
 
 }

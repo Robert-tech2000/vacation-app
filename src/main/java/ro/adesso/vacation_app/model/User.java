@@ -1,10 +1,10 @@
 package ro.adesso.vacation_app.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 import ro.adesso.vacation_app.util.AbstractEntity;
 
 import java.util.List;
@@ -22,6 +22,6 @@ public class User extends AbstractEntity {
     private boolean isArchived;
 
     @OneToMany
-    @JsonIgnore
     private List<VacationRequest> vacationRequests;
+
 }
