@@ -48,8 +48,19 @@ public class VacationRequestService {
         return vacationMapper.toDTO(vacation);
     }
 
-    public List<VacationRequestDTO> getAllVacations() {
+    public List<VacationRequestDTO> getAllVacations(Long userId, VacationRequestStatus status) {
         logger.info("Getting all vacations");
+
+        if (userId != null) {
+            if (status != null) {
+                return Streamable.of(repository.findByUserIdAndStatus(userId, status)).toList().stream().map(vacationMapper::toDTO).toList();
+            } else {
+                return Streamable.of(repository.findByUserId(userId)).toList().stream().map(vacationMapper::toDTO).toList();
+            }
+        } else if (status != null) {
+            return Streamable.of(repository.findByStatus(status)).toList().stream().map(vacationMapper::toDTO).toList();
+        }
+
         return Streamable.of(repository.findAll()).toList().stream().map(vacationMapper::toDTO).toList();
     }
 

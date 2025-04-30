@@ -1,7 +1,9 @@
 package ro.adesso.vacation_app.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,7 +23,8 @@ public class User extends AbstractEntity {
     private String email;
     private boolean isArchived;
 
-    @OneToMany
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @JsonIgnore
     private List<VacationRequest> vacationRequests;
 
 }

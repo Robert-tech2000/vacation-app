@@ -30,14 +30,16 @@ public class VacationRequestController {
     public ResponseEntity<VacationRequestDTO> getVacation(@PathVariable("vacationId") Long vacationId) {
         VacationRequestDTO vacation = service.getVacation(vacationId);
 
-        return vacation.getId() != null
-                ? ResponseEntity.ok(vacation)
-                : ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        return vacation.getId() != null ? ResponseEntity.ok(vacation) : ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
 
     @GetMapping()
-    public ResponseEntity<List<VacationRequestDTO>> getAllVacations() {
-        List<VacationRequestDTO> vacations = service.getAllVacations();
+    public ResponseEntity<List<VacationRequestDTO>> getAllVacations(
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) VacationRequestStatus status) {
+
+        List<VacationRequestDTO> vacations = service.getAllVacations(userId, status);
+
         if (vacations.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
@@ -46,7 +48,7 @@ public class VacationRequestController {
 
     @Transactional
     @PutMapping("/{vacationId}")
-    public ResponseEntity<Void> updateVacation(@PathVariable("vacationId") Long vacationId, VacationRequestStatus status) {
+    public ResponseEntity<Void> updateVacation(@PathVariable("vacationId") Long vacationId, @RequestParam(name = "status") VacationRequestStatus status) {
         service.updateVacation(vacationId, status);
         return ResponseEntity.noContent().build();
     }
