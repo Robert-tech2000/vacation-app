@@ -9,15 +9,15 @@ import lombok.Getter;
 import lombok.Setter;
 import ro.adesso.vacation_app.util.AbstractEntity;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 @Entity
 @Getter
 @Setter
 public class VacationRequest extends AbstractEntity {
 
-    private Date startDate;
-    private Date endDate;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private Integer duration;
     private String description;
 

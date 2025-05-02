@@ -29,6 +29,7 @@ public class UserService {
         newUser.setEmail(user.getEmail());
         newUser.setFirstName(user.getFirstName());
         newUser.setLastName(user.getLastName());
+        newUser.setReportsTo(userMapper.toEntity(user.getReportsTo()));
         newUser.setArchived(false);
 
         repository.save(newUser);

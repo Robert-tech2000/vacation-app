@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import ro.adesso.vacation_app.model.VacationRequest;
 import ro.adesso.vacation_app.util.AbstractEntity;
 
 import java.util.List;
@@ -23,5 +22,7 @@ public class UserDTO extends AbstractEntity {
     private String email;
     private boolean isArchived;
 
-    private List<VacationRequest> vacationRequests;
+    private UserDTO reportsTo;
+
+    private List<VacationRequestDTO> vacationRequests;
 }

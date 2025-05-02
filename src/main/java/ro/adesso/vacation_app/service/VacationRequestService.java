@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Service;
 import ro.adesso.vacation_app.dto.VacationRequestDTO;
+import ro.adesso.vacation_app.dto.mapper.UserMapper;
 import ro.adesso.vacation_app.dto.mapper.VacationMapper;
 import ro.adesso.vacation_app.model.VacationRequest;
 import ro.adesso.vacation_app.model.VacationRequestStatus;
@@ -19,10 +20,12 @@ public class VacationRequestService {
     private final VacationRequestRepository repository;
     private final VacationMapper vacationMapper;
     private static final Logger logger = LoggerFactory.getLogger(VacationRequestService.class);
+    private final UserMapper userMapper;
 
-    public VacationRequestService(VacationRequestRepository repository, VacationMapper vacationMapper) {
+    public VacationRequestService(VacationRequestRepository repository, VacationMapper vacationMapper, UserMapper userMapper) {
         this.repository = repository;
         this.vacationMapper = vacationMapper;
+        this.userMapper = userMapper;
     }
 
     public VacationRequestDTO createVacation(VacationRequestDTO vacation) {
@@ -34,7 +37,7 @@ public class VacationRequestService {
         vacationRequest.setType(vacation.getType());
         vacationRequest.setStatus(VacationRequestStatus.PENDING);
         vacationRequest.setWithPay(vacation.isWithPay());
-        vacationRequest.setUser(vacation.getUser());
+        vacationRequest.setUser(userMapper.toEntity(vacation.getUser()));
 
         repository.save(vacationRequest);
         logger.info("Vacation created successfully with ID: {}", vacationRequest.getId());
@@ -49,19 +52,22 @@ public class VacationRequestService {
     }
 
     public List<VacationRequestDTO> getAllVacations(Long userId, VacationRequestStatus status) {
-        logger.info("Getting all vacations");
+        List<VacationRequest> results;
 
         if (userId != null) {
             if (status != null) {
-                return Streamable.of(repository.findByUserIdAndStatus(userId, status)).toList().stream().map(vacationMapper::toDTO).toList();
+                results = repository.findByUserIdAndStatus(userId, status);
             } else {
-                return Streamable.of(repository.findByUserId(userId)).toList().stream().map(vacationMapper::toDTO).toList();
+                results = repository.findByUserId(userId);
             }
         } else if (status != null) {
-            return Streamable.of(repository.findByStatus(status)).toList().stream().map(vacationMapper::toDTO).toList();
+            results = repository.findByStatus(status);
+        } else {
+            results = repository.findAll();
         }
 
-        return Streamable.of(repository.findAll()).toList().stream().map(vacationMapper::toDTO).toList();
+        logger.info("Getting all vacations");
+        return Streamable.of(results).toList().stream().map(vacationMapper::toDTO).toList();
     }
 
     public void updateVacation(Long vacationId, VacationRequestStatus status) {
@@ -74,6 +80,7 @@ public class VacationRequestService {
         VacationRequest vacation = repository.findById(vacationId)
                 .orElseThrow(() -> new EntityNotFoundException("Vacation not found with ID: " + vacationId));
 
+        //@TODO: only HR can delete approved vacation
         if (vacation.getStatus() != VacationRequestStatus.PENDING) {
             throw new IllegalStateException("Only vacation requests with PENDING status can be deleted.");
         }
