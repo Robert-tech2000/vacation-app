@@ -14,7 +14,7 @@ public class VacationRequestDTO extends AbstractEntity {
 
     private LocalDate startDate;
     private LocalDate endDate;
-    private Integer duration;
+    private Long duration;
     private String description;
     private VacationRequestType type;
     private VacationRequestStatus status;

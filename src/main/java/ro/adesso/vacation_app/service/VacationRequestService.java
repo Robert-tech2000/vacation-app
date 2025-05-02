@@ -11,7 +11,10 @@ import ro.adesso.vacation_app.dto.mapper.VacationMapper;
 import ro.adesso.vacation_app.model.VacationRequest;
 import ro.adesso.vacation_app.model.VacationRequestStatus;
 import ro.adesso.vacation_app.repository.VacationRequestRepository;
+import ro.adesso.vacation_app.util.PublicHolidayUtil;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -19,20 +22,24 @@ public class VacationRequestService {
 
     private final VacationRequestRepository repository;
     private final VacationMapper vacationMapper;
-    private static final Logger logger = LoggerFactory.getLogger(VacationRequestService.class);
     private final UserMapper userMapper;
+    private final PublicHolidayUtil publicHolidayUtil;
+    private static final Logger logger = LoggerFactory.getLogger(VacationRequestService.class);
 
-    public VacationRequestService(VacationRequestRepository repository, VacationMapper vacationMapper, UserMapper userMapper) {
+    public VacationRequestService(VacationRequestRepository repository, VacationMapper vacationMapper, UserMapper userMapper, PublicHolidayUtil publicHolidayUtil) {
         this.repository = repository;
         this.vacationMapper = vacationMapper;
         this.userMapper = userMapper;
+        this.publicHolidayUtil = publicHolidayUtil;
     }
 
     public VacationRequestDTO createVacation(VacationRequestDTO vacation) {
         VacationRequest vacationRequest = new VacationRequest();
         vacationRequest.setStartDate(vacation.getStartDate());
         vacationRequest.setEndDate(vacation.getEndDate());
-        vacationRequest.setDuration(vacation.getDuration());
+        vacationRequest.setDuration(
+                countVacationDuration(vacation.getStartDate(), vacation.getEndDate())
+        );
         vacationRequest.setDescription(vacation.getDescription());
         vacationRequest.setType(vacation.getType());
         vacationRequest.setStatus(VacationRequestStatus.PENDING);
@@ -87,5 +94,19 @@ public class VacationRequestService {
 
         repository.deleteById(vacationId);
         logger.info("Deleted Vacation with ID: {}", vacationId);
+    }
+
+    private Long countVacationDuration(LocalDate startDate, LocalDate endDate) {
+        List<LocalDate> publicHolidays = publicHolidayUtil.getHolidaysBetweenDates(startDate, endDate, "RO");
+
+        return startDate.datesUntil(endDate.plusDays(1))
+                .filter(date -> !isWeekend(date))
+                .filter(date -> !publicHolidays.contains(date))
+                .count();
+    }
+
+    private boolean isWeekend(LocalDate date) {
+        DayOfWeek day = date.getDayOfWeek();
+        return day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY;
     }
 }

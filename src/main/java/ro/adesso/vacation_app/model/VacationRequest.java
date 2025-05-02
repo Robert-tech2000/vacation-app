@@ -18,7 +18,7 @@ public class VacationRequest extends AbstractEntity {
 
     private LocalDate startDate;
     private LocalDate endDate;
-    private Integer duration;
+    private Long duration;
     private String description;
 
     @Enumerated(EnumType.STRING)
