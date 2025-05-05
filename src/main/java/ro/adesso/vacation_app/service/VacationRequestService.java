@@ -11,9 +11,9 @@ import ro.adesso.vacation_app.dto.mapper.VacationMapper;
 import ro.adesso.vacation_app.model.VacationRequest;
 import ro.adesso.vacation_app.model.VacationRequestStatus;
 import ro.adesso.vacation_app.repository.VacationRequestRepository;
-import ro.adesso.vacation_app.util.PublicHolidayUtil;
+import ro.adesso.vacation_app.util.PublicHolidayProvider;
+import ro.adesso.vacation_app.util.WeekendProvider;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -23,14 +23,21 @@ public class VacationRequestService {
     private final VacationRequestRepository repository;
     private final VacationMapper vacationMapper;
     private final UserMapper userMapper;
-    private final PublicHolidayUtil publicHolidayUtil;
+    private final PublicHolidayProvider publicHolidayProvider;
+    private final WeekendProvider weekendProvider;
     private static final Logger logger = LoggerFactory.getLogger(VacationRequestService.class);
 
-    public VacationRequestService(VacationRequestRepository repository, VacationMapper vacationMapper, UserMapper userMapper, PublicHolidayUtil publicHolidayUtil) {
+    public VacationRequestService(
+            VacationRequestRepository repository,
+            VacationMapper vacationMapper,
+            UserMapper userMapper,
+            PublicHolidayProvider publicHolidayProvider,
+            WeekendProvider weekendProvider) {
         this.repository = repository;
         this.vacationMapper = vacationMapper;
         this.userMapper = userMapper;
-        this.publicHolidayUtil = publicHolidayUtil;
+        this.publicHolidayProvider = publicHolidayProvider;
+        this.weekendProvider = weekendProvider;
     }
 
     public VacationRequestDTO createVacation(VacationRequestDTO vacation) {
@@ -97,16 +104,11 @@ public class VacationRequestService {
     }
 
     private Long countVacationDuration(LocalDate startDate, LocalDate endDate) {
-        List<LocalDate> publicHolidays = publicHolidayUtil.getHolidaysBetweenDates(startDate, endDate, "RO");
+        List<LocalDate> publicHolidays = publicHolidayProvider.getHolidaysBetweenDates(startDate, endDate, "RO");
 
         return startDate.datesUntil(endDate.plusDays(1))
-                .filter(date -> !isWeekend(date))
+                .filter(date -> !weekendProvider.isWeekend(date, "RO"))
                 .filter(date -> !publicHolidays.contains(date))
                 .count();
-    }
-
-    private boolean isWeekend(LocalDate date) {
-        DayOfWeek day = date.getDayOfWeek();
-        return day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY;
     }
 }

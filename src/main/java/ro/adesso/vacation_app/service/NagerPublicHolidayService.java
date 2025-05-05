@@ -1,21 +1,24 @@
 package ro.adesso.vacation_app.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import ro.adesso.vacation_app.dto.PublicHolidayDT0;
-import ro.adesso.vacation_app.util.PublicHolidayUtil;
+import ro.adesso.vacation_app.util.PublicHolidayProvider;
 
 import java.time.LocalDate;
 import java.util.*;
 
 @Service
-public class NagerPublicHolidayService implements PublicHolidayUtil {
+public class NagerPublicHolidayService implements PublicHolidayProvider {
 
+    @Value("${api.public-holidays.url}")
+    private String nagerServiceApiURL;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Override
     public List<PublicHolidayDT0> getHolidays(int year, String countryCode) {
-        String url = String.format("https://date.nager.at/api/v3/PublicHolidays/%d/%s", year, countryCode);
+        String url = String.format("%s/%d/%s", nagerServiceApiURL, year, countryCode);
         PublicHolidayDT0[] response = restTemplate.getForObject(url, PublicHolidayDT0[].class);
         return Arrays.asList(response);
     }
