@@ -2,6 +2,7 @@ package ro.adesso.vacation_app.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Service;
 import ro.adesso.vacation_app.dto.UserDTO;
@@ -14,6 +15,8 @@ import java.util.List;
 @Service
 public class UserService {
 
+    @Value("${user.default-alloted-vacation-days}")
+    private int defaultAllotedVacationDays;
     private final UserRepository repository;
     private final UserMapper userMapper;
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
@@ -29,6 +32,7 @@ public class UserService {
         newUser.setEmail(user.getEmail());
         newUser.setFirstName(user.getFirstName());
         newUser.setLastName(user.getLastName());
+        newUser.setAllotedVacationDays(defaultAllotedVacationDays);
         newUser.setReportsTo(userMapper.toEntity(user.getReportsTo()));
         newUser.setArchived(false);
 
