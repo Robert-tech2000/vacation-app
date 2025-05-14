@@ -1,14 +1,16 @@
-package ro.adesso.vacation_app.dto;
+package ro.adesso.vacation_app.model;
 
+import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.Setter;
 import ro.adesso.vacation_app.util.AbstractEntity;
 
 import java.time.LocalDate;
 
+@Entity
 @Getter
 @Setter
-public class PublicHolidayDT0 extends AbstractEntity {
+public class PublicHoliday extends AbstractEntity {
 
     private LocalDate date;
     private String localName;

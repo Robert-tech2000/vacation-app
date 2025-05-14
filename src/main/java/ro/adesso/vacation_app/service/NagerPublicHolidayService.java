@@ -1,17 +1,21 @@
 package ro.adesso.vacation_app.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import ro.adesso.vacation_app.dto.PublicHolidayDT0;
-import ro.adesso.vacation_app.model.CachedHolidayResponse;
-import ro.adesso.vacation_app.repository.CachedHolidayResponseRepository;
+import ro.adesso.vacation_app.exception.PublicHolidayFetchException;
+import ro.adesso.vacation_app.model.PublicHoliday;
+import ro.adesso.vacation_app.repository.PublicHolidayRepository;
 import ro.adesso.vacation_app.util.PublicHolidayProvider;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class NagerPublicHolidayService implements PublicHolidayProvider {
@@ -19,48 +23,52 @@ public class NagerPublicHolidayService implements PublicHolidayProvider {
     @Value("${api.public-holidays.url}")
     private String nagerServiceApiURL;
     private final RestTemplate restTemplate = new RestTemplate();
-    private final CachedHolidayResponseRepository cacheRepository;
-    private final ObjectMapper objectMapper;
+    private final PublicHolidayRepository publicHolidayRepository;
 
-    public NagerPublicHolidayService(CachedHolidayResponseRepository cacheRepository, ObjectMapper objectMapper) {
-        this.cacheRepository = cacheRepository;
-        this.objectMapper = objectMapper;
+    public NagerPublicHolidayService(PublicHolidayRepository publicHolidayRepository) {
+        this.publicHolidayRepository = publicHolidayRepository;
     }
 
     @Override
-    public List<PublicHolidayDT0> getHolidays(int year, String countryCode) {
-        // Attempt to retrieve holidays from cache.
-        Optional<CachedHolidayResponse> cachedHolidays = cacheRepository.findByCountryCodeAndYear(countryCode, year);
-        if (cachedHolidays.isPresent()) {
-            try {
-                return Arrays.asList(objectMapper.readValue(
-                        cachedHolidays.get().getHolidaysJson(), PublicHolidayDT0[].class));
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Failed to parse cached holidays JSON", e);
-            }
+    @Cacheable(value = "publicHolidays", key = "#countryCode + '-' + #year")
+    public List<PublicHoliday> getHolidays(int year, String countryCode) {
+        //TODO: implement Local for country code
+
+        // Attempt to retrieve holidays from DB.
+        List<PublicHoliday> publicHolidays = publicHolidayRepository.findByCountryCodeAndDateBetween(
+                countryCode,
+                LocalDate.of(year, 1, 1),
+                LocalDate.of(year, 12, 31)
+        );
+        if (!publicHolidays.isEmpty()) {
+            return publicHolidays;
         }
 
         // Retrieve holidays from API .
         String url = String.format("%s/%d/%s", nagerServiceApiURL, year, countryCode);
-        PublicHolidayDT0[] response = restTemplate.getForObject(url, PublicHolidayDT0[].class);
-
         try {
-            String holidayResponseJson = objectMapper.writeValueAsString(response);
+            PublicHoliday[] response = restTemplate.getForObject(url, PublicHoliday[].class);
+            if (response == null || response.length == 0) {
+                throw new PublicHolidayFetchException("No public holidays returned from API for " + countryCode + " in " + year);
+            }
 
-            CachedHolidayResponse holidayResponse = new CachedHolidayResponse();
-            holidayResponse.setYear(year);
-            holidayResponse.setCountryCode(countryCode);
-            holidayResponse.setHolidaysJson(holidayResponseJson);
+            List<PublicHoliday> fetchedHolidays = Arrays.asList(response);
+            publicHolidayRepository.saveAll(fetchedHolidays);
+            return fetchedHolidays;
 
-            cacheRepository.save(holidayResponse);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to serialize holidays for caching", e);
+        } catch (RestClientException e) {
+            throw new PublicHolidayFetchException("Failed to retrieve public holidays from API: " + e.getMessage(), e);
         }
-
-        return Arrays.asList(response);
     }
 
+    @Cacheable(value = "publicHolidays", key = "#countryCode + '-' + #startDate + '-' + #endDate")
     public List<LocalDate> getHolidaysBetweenDates(LocalDate startDate, LocalDate endDate, String countryCode) {
+        System.out.println("Fetching holidays from DB/API (not cache)");
+        List<PublicHoliday> publicHolidays = publicHolidayRepository.findByCountryCodeAndDateBetween(countryCode, startDate, endDate);
+        if (!publicHolidays.isEmpty()) {
+            return publicHolidays.stream().map(PublicHoliday::getDate).collect(Collectors.toList());
+        }
+
         Set<Integer> years = new HashSet<>();
         years.add(startDate.getYear());
         if (startDate.getYear() != endDate.getYear()) {
@@ -69,7 +77,7 @@ public class NagerPublicHolidayService implements PublicHolidayProvider {
 
         return years.stream()
                 .flatMap(year -> getHolidays(year, countryCode).stream())
-                .map(holiday -> LocalDate.parse(holiday.getDate()))
+                .map(PublicHoliday::getDate)
                 .filter(date -> !date.isBefore(startDate) && !date.isAfter(endDate))
                 .toList();
     }

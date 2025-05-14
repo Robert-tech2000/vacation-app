@@ -31,12 +31,6 @@ public class VacationAppUserUnitTest {
     @Mock
     private UserMapper userMapper;
 
-    //@TODO: setup defaultAllotedVacationDays and reporstTo fields and test them
-//    @BeforeEach
-//    void setUp() {
-//        ReflectionTestUtils.setField(userService, "defaultAllotedVacationDays", 21);
-//    }
-
     @Test
     void testCreateUser() {
         // Given

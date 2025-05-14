@@ -2,8 +2,7 @@ package ro.adesso.vacation_app.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import ro.adesso.vacation_app.util.AbstractEntity;
 
 import java.util.List;
@@ -11,6 +10,9 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class User extends AbstractEntity {
 
     @Column(unique = true, nullable = false)

@@ -3,13 +3,18 @@ package ro.adesso.vacation_app.service;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Streamable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import ro.adesso.vacation_app.config.JwtInterceptor;
 import ro.adesso.vacation_app.dto.VacationRequestDTO;
 import ro.adesso.vacation_app.dto.mapper.UserMapper;
 import ro.adesso.vacation_app.dto.mapper.VacationMapper;
+import ro.adesso.vacation_app.model.User;
 import ro.adesso.vacation_app.model.VacationRequest;
 import ro.adesso.vacation_app.model.VacationRequestStatus;
+import ro.adesso.vacation_app.repository.UserRepository;
 import ro.adesso.vacation_app.repository.VacationRequestRepository;
 import ro.adesso.vacation_app.util.PublicHolidayProvider;
 import ro.adesso.vacation_app.util.WeekendProvider;
@@ -21,19 +26,25 @@ import java.util.List;
 public class VacationRequestService {
 
     private final VacationRequestRepository repository;
+    private final UserRepository userRepository;
+    private JwtInterceptor jwtInterceptor;
     private final VacationMapper vacationMapper;
     private final UserMapper userMapper;
     private final PublicHolidayProvider publicHolidayProvider;
     private final WeekendProvider weekendProvider;
     private static final Logger logger = LoggerFactory.getLogger(VacationRequestService.class);
+    @Value("${security.roles.admin}")
+    private String ROLE_ADMIN;
 
     public VacationRequestService(
-            VacationRequestRepository repository,
+            VacationRequestRepository repository, UserRepository userRepository, JwtInterceptor jwtInterceptor,
             VacationMapper vacationMapper,
             UserMapper userMapper,
             PublicHolidayProvider publicHolidayProvider,
             WeekendProvider weekendProvider) {
         this.repository = repository;
+        this.userRepository = userRepository;
+        this.jwtInterceptor = jwtInterceptor;
         this.vacationMapper = vacationMapper;
         this.userMapper = userMapper;
         this.publicHolidayProvider = publicHolidayProvider;
@@ -51,7 +62,11 @@ public class VacationRequestService {
         vacationRequest.setType(vacation.getType());
         vacationRequest.setStatus(VacationRequestStatus.PENDING);
         vacationRequest.setWithPay(vacation.isWithPay());
-        vacationRequest.setUser(userMapper.toEntity(vacation.getUser()));
+
+        User user = userRepository.findById(vacation.getUser().getId())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        vacationRequest.setUser(user);
 
         repository.save(vacationRequest);
         logger.info("Vacation created successfully with ID: {}", vacationRequest.getId());
@@ -94,9 +109,15 @@ public class VacationRequestService {
         VacationRequest vacation = repository.findById(vacationId)
                 .orElseThrow(() -> new EntityNotFoundException("Vacation not found with ID: " + vacationId));
 
-        //@TODO: only HR can delete approved vacation
-        if (vacation.getStatus() != VacationRequestStatus.PENDING) {
-            throw new IllegalStateException("Only vacation requests with PENDING status can be deleted.");
+        User current = jwtInterceptor.getCurrentUser();
+        if(!hasRole(ROLE_ADMIN)){
+            //Verify that user is attempting to delete own VacationRequest and is of status PENDING
+            if(current.getId() != vacation.getUser().getId()){
+                throw new IllegalStateException("Only own vacation requests can be deleted.");
+            }
+            if (vacation.getStatus() != VacationRequestStatus.PENDING) {
+                throw new IllegalStateException("Only vacation requests with PENDING status can be deleted.");
+            }
         }
 
         repository.deleteById(vacationId);
@@ -110,5 +131,12 @@ public class VacationRequestService {
                 .filter(date -> !weekendProvider.isWeekend(date, "RO"))
                 .filter(date -> !publicHolidays.contains(date))
                 .count();
+    }
+
+    private boolean hasRole(String role) {
+        return SecurityContextHolder.getContext().getAuthentication()
+                .getAuthorities()
+                .stream()
+                .anyMatch(auth -> auth.getAuthority().equals(role));
     }
 }
