@@ -11,6 +11,7 @@ import ro.adesso.vacation_app.config.JwtInterceptor;
 import ro.adesso.vacation_app.dto.VacationRequestDTO;
 import ro.adesso.vacation_app.dto.mapper.UserMapper;
 import ro.adesso.vacation_app.dto.mapper.VacationMapper;
+import ro.adesso.vacation_app.exception.VacationRequestException;
 import ro.adesso.vacation_app.model.User;
 import ro.adesso.vacation_app.model.VacationRequest;
 import ro.adesso.vacation_app.model.VacationRequestStatus;
@@ -21,6 +22,7 @@ import ro.adesso.vacation_app.util.WeekendProvider;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class VacationRequestService {
@@ -110,13 +112,13 @@ public class VacationRequestService {
                 .orElseThrow(() -> new EntityNotFoundException("Vacation not found with ID: " + vacationId));
 
         User current = jwtInterceptor.getCurrentUser();
-        if(!hasRole(ROLE_ADMIN)){
+        if (!hasRole(ROLE_ADMIN)) {
             //Verify that user is attempting to delete own VacationRequest and is of status PENDING
-            if(current.getId() != vacation.getUser().getId()){
-                throw new IllegalStateException("Only own vacation requests can be deleted.");
+            if (!Objects.equals(current.getId(), vacation.getUser().getId())) {
+                throw new VacationRequestException("Only own vacation requests can be deleted.");
             }
             if (vacation.getStatus() != VacationRequestStatus.PENDING) {
-                throw new IllegalStateException("Only vacation requests with PENDING status can be deleted.");
+                throw new VacationRequestException("Only vacation requests with PENDING status can be deleted.");
             }
         }
 
