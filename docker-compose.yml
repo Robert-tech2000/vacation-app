@@ -38,7 +38,7 @@ services:
     container_name: vacation-app-keycloak
     command:
       - start-dev
-#      - --import-realm
+      - --import-realm
     environment:
       KC_DB: mysql
       KC_DB_URL: jdbc:mysql://db_keycloak:3306/keycloak

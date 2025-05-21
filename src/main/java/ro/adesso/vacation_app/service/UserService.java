@@ -33,7 +33,12 @@ public class UserService {
         newUser.setFirstName(user.getFirstName());
         newUser.setLastName(user.getLastName());
         newUser.setAllotedVacationDays(defaultAllotedVacationDays);
-        newUser.setReportsTo(userMapper.toEntity(user.getReportsTo()));
+
+        // Save report to user
+        if (user.getReportsTo() != null) {
+            User reportsTo = repository.findById(user.getReportsTo().getId()).orElse(null);
+            newUser.setReportsTo(reportsTo);
+        }
         newUser.setArchived(false);
 
         repository.save(newUser);
