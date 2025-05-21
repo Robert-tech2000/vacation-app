@@ -84,11 +84,6 @@ public class JwtInterceptor implements HandlerInterceptor {
             boolean isAdmin = jwtRoles.contains(ADMIN_ROLE);
             boolean isEmployee = jwtRoles.contains(EMPLOYEE_ROLE);
 
-//            if (isAdmin) {
-//                newAccount.setRoles(List.of(Role.ADMIN_ROLE));
-//            } else if (isEmployee) {
-//                newAccount.setRoles(List.of(Role.EMPLOYEE_ROLE));
-//            }
             newAccount = userRepository.save(newAccount);
             return newAccount;
         });

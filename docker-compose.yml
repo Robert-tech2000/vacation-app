@@ -13,25 +13,81 @@ services:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+
+  db_keycloak:
+    image: mysql:latest
+    container_name: vacation-app-keycloak-mysql
+    ports:
+      - 3307:3306
+    volumes:
+      - keycloak-mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: pass
+      MYSQL_DATABASE: keycloak
+      MYSQL_USER: keycloak
+      MYSQL_PASSWORD: keycloakpass
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.1
     container_name: vacation-app-keycloak
     command:
       - start-dev
-      - --features=scripts
-      - --spi-theme-static-max-age=-1
-      - --spi-theme-cache-themes=false
-      - --spi-theme-cache-templates=false
+#      - --import-realm
     environment:
-      KC_DB: dev-file
+      KC_DB: mysql
+      KC_DB_URL: jdbc:mysql://db_keycloak:3306/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloakpass
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+    depends_on:
+      db_keycloak:
+        condition: service_healthy
     ports:
       - 8081:8080
+    volumes:
+      - ./docker/Vacation-Application-Realm-realm.json:/opt/keycloak/data/import/Vacation-Application-Realm-realm.json
     healthcheck:
       test: [ "CMD", "sh", "-c", "exec 3<>/dev/tcp/localhost/8080" ]
       interval: 10s
       timeout: 5s
       retries: 10
+
+  vacationAppService:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vacation-application
+    container_name: vacation-application-service
+    ports:
+      - 8080:8080
+      - 5005:5005
+    depends_on:
+      db:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/vacation_application
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=pass
+      - SECURITY.ROLES.ADMIN=ROLE_ADMIN
+      - SECURITY.ROLES.EMPLOYEE=ROLE_EMPLOYEE
+      - SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT_ID=Vacation_App_Client
+      - SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI=http://host.docker.internal:8081/realms/Vacation-Application-Realm
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://host.docker.internal:8081/realms/Vacation-Application-Realm/protocol/openid-connect/certs
+      - SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN_URI=http://localhost:8081/realms/Vacation-Application-Realm/protocol/openid-connect/token
+      - SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_AUTHORIZATION_GRANT_TYPE=client_credentials
+      - KEYCLOAK_ENABLE_CORS=true
+      - KEYCLOAK_BEARER_ONLY=true
+      - KEYCLOAK_SSL_REQUIRED=external
+      - KEYCLOAK_USE_RESOURCE_ROLE_MAPPINGS=true
+
+volumes:
+  keycloak-mysql-data:
