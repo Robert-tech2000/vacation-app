@@ -88,6 +88,8 @@ services:
       - KEYCLOAK_BEARER_ONLY=true
       - KEYCLOAK_SSL_REQUIRED=external
       - KEYCLOAK_USE_RESOURCE_ROLE_MAPPINGS=true
+    volumes:
+      - ./logs:/logs
 
 volumes:
   keycloak-mysql-data:
