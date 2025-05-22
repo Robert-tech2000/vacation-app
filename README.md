@@ -227,7 +227,6 @@ Content-Type: application/json
 {
   "grant_type": "password",
   "client_id": "Vacation_App_Client",
-  "description": "Family holiday",
   "username": "$username",
   "password": "$password"
   }
