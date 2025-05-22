@@ -83,7 +83,53 @@ command:
 | GET    | `/users/{userId}`   | Retrieve user by ID              |
 | GET    | `/users`            | Retrieve all users               |
 | PUT    | `/users/{userId}`   | Archive a user                   |
-| GET    | `/users/me`         | Get the currently authenticated user (🔧 WIP) |
+| GET    | `/users/me`         | Get the currently authenticated user (🔧 WIP) |  
+
+<br>
+
+####  ➕ Create User
+
+```http
+POST /users
+Content-Type: application/json
+{
+  "username": "john_doe",
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "reportsTo": {
+    "id": 1
+  }
+}
+```
+<br>
+
+#### 📃 Get User by ID
+
+```http
+GET /users/{userId}
+```
+
+Path parameter: <br> 
+ - userId: ID of the user to fetch
+
+<br> 
+
+#### 📃 Get All Users
+```http
+GET /users
+```
+Path parameter: No query parameters.
+
+<br>
+
+#### 🗑️ Archive User
+```http
+PUT /users/{userId}
+```
+Path parameter: <br>
+- userId: ID of the user to archive
+
 
 ---
 
@@ -97,6 +143,64 @@ command:
 | GET    | `/vacations`              | List all vacations (filtered by user ID or status) |
 | PUT    | `/vacations/{vacationId}` | Update vacation status               |
 | DELETE | `/vacations/{vacationId}` | Delete a vacation (only if pending)  |
+
+<br>
+➕ Create Vacation Request
+
+```http
+POST /vacations
+Content-Type: application/json
+{
+  "startDate": "2025-01-02",
+  "endDate": "2025-01-10",
+  "description": "Family holiday",
+  "type": "SPECIAL_EVENT",
+  "status": "PENDING",
+  "withPay": true,
+  "user": {
+    "id": 2
+  }
+}
+```
+<br>
+📃 Get Vacation by ID
+
+```http
+GET /vacations/{vacationId}
+```
+Path parameter: <br>
+- vacationId: ID of the vacation request
+
+<br>
+📃 Get All Vacations
+
+```http
+GET /vacations
+```
+Query parameters (optional): <br>
+- userId: Filter by user ID (e.g. /vacations?userId=3)
+- status: Filter by request status (PENDING, APPROVED, etc.)
+
+<br>
+🔄 Update Vacation Status
+
+```http
+PUT /vacations/{vacationId}?status=APPROVED
+```
+Path parameter: <br>
+- vacationId: ID of the vacation to update
+
+Query parameter: <br>
+- status: New status (e.g. APPROVED, REJECTED, etc.)
+
+<br>
+🗑️ Delete Vacation(employee can only delete own vacation request, and with status PENDING)
+
+```http
+DELETE /vacations/{vacationId}
+```
+Path parameter: <br>
+- vacationId: ID of the vacation to delete
 
 ---
 
@@ -112,5 +216,36 @@ The app uses **Keycloak** for OAuth2-based security.
 
 Use a valid Keycloak access token (Bearer token) to access secured endpoints.
 
+###  Retrieve JWT Token from Keycloak
+- A user must be created in the keycloak instance by accessing http://host.docker.internal:8081/
+- Afterward Realm role Admin or Employee has to be assigned to user. 
+
+```http
+POST http://host.docker.internal:8081/realms/Vacation-Application-Realm/protocol/openid-connect/token
+
+Content-Type: application/json
+{
+  "grant_type": "password",
+  "client_id": "Vacation_App_Client",
+  "description": "Family holiday",
+  "username": "$username",
+  "password": "$password"
+  }
+}
+```
+Copy access_token from Response Body and paste to subsequent requests.
+
 ---
 
+
+## 📂 Log Output
+Logs are written to:
+```http
+./logs/vacation-app.log
+```
+<br>
+
+Configure in application.properties
+```http
+logging.file.name=/logs/vacation-app.logv
+```
