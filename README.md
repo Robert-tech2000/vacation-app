@@ -26,6 +26,7 @@ This is a Spring Boot-based REST API for managing vacation requests and users. T
 - MapStruct (DTO mapping)
 - Lombok
 - SLF4J Logging
+- GraphQL
 
 ---
 
@@ -203,6 +204,152 @@ Path parameter: <br>
 - vacationId: ID of the vacation to delete
 
 ---
+## 🚀 GraphQL Integration (features/graphql)
+<br>
+
+### 📦 Branch
+ - features/graphql
+
+### ✅ Key Features
+- GraphQL API exposed at: POST /graphql
+- Interactive GraphQL UI available (e.g. GraphiQL or compatible client)
+- Query and mutation support for:
+
+  - User: create users, fetch users, hierarchical relationships (reportsTo)
+  - VacationRequest: create vacation requests, filter by user/status, access nested relationships
+<br>
+
+### 📄 Schema Overview
+#### User Type
+```http
+type User {
+  id: ID!
+  username: String!
+  email: String
+  firstName: String
+  lastName: String
+  allotedVacationDays: Int
+  isArchived: Boolean
+  reportsTo: User
+  vacationRequests: [VacationRequest]
+}
+```
+#### VacationRequest Type
+```http
+type VacationRequest {
+  id: ID!
+  startDate: String!
+  endDate: String!
+  duration: String
+  description: String!
+  status: VacationRequestStatus
+  type: VacationRequestType
+  user: User
+  withPay: Boolean
+}
+```
+
+### 🔁 Mutations
+#### Create User
+```http
+mutation {
+  createUser(input: {
+    username: "jdoe",
+    email: "john.doe@example.com",
+    firstName: "John",
+    lastName: "Doe",
+    reportsToId: 1
+  }) {
+    id
+    username
+    reportsTo {
+      username
+    }
+  }
+}
+```
+#### Create VacationRequest
+```http
+mutation {
+  createVacationRequest(input: {
+    startDate: "2025-06-01",
+    endDate: "2025-06-10",
+    description: "Summer break",
+    withPay: true,
+    type: HOLIDAY,
+    status: PENDING,
+    userId: 5
+  }) {
+    id
+    status
+  }
+}
+```
+
+### 🔍 Queries
+#### Get User by ID
+```http
+query {
+  userById(id: 1) {
+    username
+    reportsTo {
+      username
+    }
+  }
+}
+```
+#### Get All Users
+```http
+query {
+  getAllUsers {
+    username
+    email
+    isArchived
+    reportsTo {
+      username
+    }
+  }
+}
+```
+#### Get  Vacation Request by Id
+```http
+query {
+  getVacation(id: 2) {
+    startDate
+    endDate
+    duration
+    status
+    type
+    user {
+      username
+    }
+  }
+}
+```
+
+#### Get All Vacation Requests by User or Status
+```http
+query {
+  getAllVacations(userId: 5, status: APPROVED) {
+    id
+    startDate
+    status
+  }
+}
+```
+
+###  🧪 Testing Tools
+ - GraphQL IDE (e.g., GraphiQL, Altair, Postman)
+- Authorization via Bearer Token (Spring Security is enabled)
+
+### 📌 Notes
+- The feature uses Spring GraphQL (spring-boot-starter-graphql)
+- DTOs are used in resolvers to decouple internal entities from the API
+- Dates are handled as ISO 8601 strings and converted to LocalDate automatically
+
+Enum types (VacationRequestStatus, VacationRequestType) are fully supported
+---
+
 
 ## 🔐 Authentication
 
