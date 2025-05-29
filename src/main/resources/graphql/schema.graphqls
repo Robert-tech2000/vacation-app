@@ -1,0 +1,67 @@
+type User {
+    id: ID!
+    username: String!
+    firstName: String
+    lastName: String
+    email: String
+    allotedVacationDays: Int
+    isArchived: Boolean
+    reportsTo: User
+    vacationRequests: [VacationRequest]
+}
+
+input UserInput {
+    username: String!
+    email: String
+    firstName: String
+    lastName: String
+    reportsToId: ID
+}
+
+
+type VacationRequest {
+    id: ID!
+    startDate: String!
+    endDate: String!
+    duration: String
+    description: String!
+    status: VacationRequestStatus
+    type: VacationRequestType
+    user: User
+    withPay: Boolean
+}
+
+input VacationRequestInput {
+    startDate: String!
+    endDate: String!
+    description: String!
+    withPay: Boolean!
+    type: VacationRequestType!
+    status: VacationRequestStatus
+    userId: ID!
+}
+
+enum VacationRequestStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}
+
+enum VacationRequestType {
+    HOLIDAY,
+    SPECIAL_EVENT,
+    PROFESSIONAL_FORMATION
+}
+
+type Query {
+    getAllUsers: [User]
+    getUser(id: ID!): User
+    getVacation(id: ID!): VacationRequest
+    getAllVacations(userId: ID, status: VacationRequestStatus): [VacationRequest]
+}
+
+type Mutation {
+    createUser(input: UserInput!): User
+    archiveUser(id: ID!): Boolean
+    createVacationRequest(input: VacationRequestInput!): VacationRequest
+}

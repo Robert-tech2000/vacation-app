@@ -51,9 +51,9 @@ public class UserController {
 
     @Transactional
     @PutMapping("/{userId}")
-    public ResponseEntity<Void> archiveUser(@PathVariable("userId") Long userId) {
-        service.archiveUser(userId);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Boolean> archiveUser(@PathVariable("userId") Long userId) {
+        boolean archived = service.archiveUser(userId);
+        return ResponseEntity.ok(archived);
     }
 
 }

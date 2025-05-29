@@ -23,7 +23,7 @@ public class User extends AbstractEntity {
     private int allotedVacationDays;
     private boolean isArchived;
 
-    @OneToOne
+    @ManyToOne
     private User reportsTo;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)

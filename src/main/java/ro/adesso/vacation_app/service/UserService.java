@@ -11,6 +11,7 @@ import ro.adesso.vacation_app.model.User;
 import ro.adesso.vacation_app.repository.UserRepository;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class UserService {
@@ -47,9 +48,19 @@ public class UserService {
         return userMapper.toDTO(newUser);
     }
 
-    public void archiveUser(Long userId) {
-        logger.info("Archived user with ID: {}", userId);
-        repository.findById(userId).ifPresent(user -> user.setArchived(true));
+    public boolean archiveUser(Long userId) {
+        AtomicBoolean archived = new AtomicBoolean(false);
+
+        repository.findById(userId).ifPresentOrElse(user -> {
+            user.setArchived(true);
+            repository.save(user);
+            logger.info("Archived user with ID: {}", userId);
+            archived.set(true);
+        }, () -> {
+            logger.warn("User with ID {} not found for archiving", userId);
+        });
+
+        return archived.get();
     }
 
     public UserDTO getUser(Long userId) {
