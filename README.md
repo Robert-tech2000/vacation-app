@@ -340,7 +340,8 @@ query {
 
 ###  🧪 Testing Tools
  - GraphQL IDE (e.g., GraphiQL, Altair, Postman)
-- Authorization via Bearer Token (Spring Security is enabled)
+ - GraphiQL UI tool path: http://localhost:8080/graphiql?path=/graphql 
+ - Authorization via Bearer Token (Spring Security is enabled)
 
 ### 📌 Notes
 - The feature uses Spring GraphQL (spring-boot-starter-graphql)
