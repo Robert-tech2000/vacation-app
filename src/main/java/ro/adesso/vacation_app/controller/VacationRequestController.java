@@ -1,5 +1,6 @@
 package ro.adesso.vacation_app.controller;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,16 +49,20 @@ public class VacationRequestController {
 
     @Transactional
     @PutMapping("/{vacationId}")
-    public ResponseEntity<Void> updateVacation(@PathVariable("vacationId") Long vacationId, @RequestParam(name = "status") VacationRequestStatus status) {
-        service.updateVacation(vacationId, status);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> updateVacation(@PathVariable("vacationId") Long vacationId, @RequestParam(name = "status") VacationRequestStatus status) {
+        try {
+            VacationRequestDTO updatedVacation = service.updateVacation(vacationId, status);
+            return ResponseEntity.ok(updatedVacation);
+        } catch (EntityNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        }
     }
 
     @Transactional
     @DeleteMapping("/{vacationId}")
-    public ResponseEntity<Void> deleteClient(@PathVariable("vacationId") Long vacationId) {
-        service.deleteVacationById(vacationId);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Boolean> deleteVacation(@PathVariable("vacationId") Long vacationId) {
+        boolean deleted = service.deleteVacationById(vacationId);
+        return ResponseEntity.ok(deleted);
     }
 
 }

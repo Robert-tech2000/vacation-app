@@ -101,12 +101,16 @@ public class VacationRequestService {
         return Streamable.of(results).toList().stream().map(vacationMapper::toDTO).toList();
     }
 
-    public void updateVacation(Long vacationId, VacationRequestStatus status) {
-        logger.info("Vacation with ID: {} updated with status: {}", vacationId, status);
-        repository.findById(vacationId).ifPresent(vacation -> vacation.setStatus(status));
+    public VacationRequestDTO updateVacation(Long vacationId, VacationRequestStatus status) {
+        return repository.findById(vacationId).map(vacation -> {
+            vacation.setStatus(status);
+            VacationRequest updated = repository.save(vacation); // save the updated entity
+            logger.info("Vacation with ID: {} updated with status: {}", vacationId, status);
+            return vacationMapper.toDTO(updated);
+        }).orElseThrow(() -> new EntityNotFoundException("VacationRequest not found with ID: " + vacationId));
     }
 
-    public void deleteVacationById(Long vacationId) {
+    public boolean deleteVacationById(Long vacationId) {
         logger.info("Attempting to delete Vacation with ID: {}", vacationId);
         VacationRequest vacation = repository.findById(vacationId)
                 .orElseThrow(() -> new EntityNotFoundException("Vacation not found with ID: " + vacationId));
@@ -122,8 +126,9 @@ public class VacationRequestService {
             }
         }
 
-        repository.deleteById(vacationId);
         logger.info("Deleted Vacation with ID: {}", vacationId);
+        repository.deleteById(vacationId);
+        return true;
     }
 
     private Long countVacationDuration(LocalDate startDate, LocalDate endDate) {

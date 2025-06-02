@@ -64,4 +64,6 @@ type Mutation {
     createUser(input: UserInput!): User
     archiveUser(id: ID!): Boolean
     createVacationRequest(input: VacationRequestInput!): VacationRequest
+    updateVacationStatus(vacationId: ID!, status: VacationRequestStatus!): VacationRequest
+    deleteVacation(vacationId: ID!): Boolean
 }

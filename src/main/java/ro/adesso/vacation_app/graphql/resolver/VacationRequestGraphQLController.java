@@ -55,4 +55,15 @@ public class VacationRequestGraphQLController {
         return vacationService.createVacation(vacationRequestDTO);
     }
 
+    @MutationMapping
+    public VacationRequestDTO updateVacationStatus(@Argument Long vacationId,
+                                        @Argument VacationRequestStatus status) {
+        return vacationService.updateVacation(vacationId, status);
+    }
+
+    @MutationMapping
+    public Boolean deleteVacation(@Argument Long vacationId) {
+        return vacationService.deleteVacationById(vacationId);
+    }
+
 }
